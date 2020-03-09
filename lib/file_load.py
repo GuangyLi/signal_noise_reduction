@@ -6,15 +6,22 @@ import numpy as np
 class FileIn:
     # Initialize the class
     def __init__(self, input_file, input_freq):
-        self.data, self.average = self.file_load(input_file)
+        self.data, self.header, self.average = self.file_load(input_file)
         self.freq = input_freq
+        
+        loc = ""
+        if "/" in input_file:
+            for i in input_file.split("/")[:-1]:
+                loc = loc+ i +"/"
+        else:
+            loc = "./"
+        self.fileloc = loc
     
     # Embedded file loading function
     def file_load(self, file_name):
         contents = []
-        total = 0
-        avg = 0
-        data_num = 0
+        head = file_name.split("/")[-1].split(".")[0]
+        total, avg, data_num = 0, 0, 0
         
         try:
             file = open(file_name, 'r')
@@ -31,21 +38,26 @@ class FileIn:
                         contents.append(value)
                         
                 except:
-                    pass
-                
+                    # Update header if internal message contains more detailed information
+                    msg = line.strip('\n')
+                    if head in msg:
+                        head = msg
+            
             file.close()
             
         except:
-            print("ERROR: File " + file_name + " does not exist\n")
+            print("ERROR: File " + file_name + " does not exist.\n")
         
         data = np.array(contents, dtype=np.float32)
-        return data, avg
+        return data, head, avg
         
-
-# Functional verification
-test = FileIn("data/google1.txt", 334)
-print("--------FileIn class functional verification--------\n")
-print(test.data)
-print("Overall average is %.2f" %test.average)
-print("The signal frequency is %d\n" %test.freq)
-print("--------Verification ends--------\n")
+if __name__ == "__main__":
+    # Functional verification
+    print("--------FileIn class functional verification--------\n")
+    test = FileIn("data/google1.txt", 334)
+    print("File located in %s" %test.fileloc)
+    print("File header is %s" %test.header)
+    print(test.data)
+    print("Overall average is %.2f" %test.average)
+    print("The signal frequency is %d\n" %test.freq)
+    print("--------Verification ends--------\n")
