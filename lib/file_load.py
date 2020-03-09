@@ -1,6 +1,8 @@
 # Python program to load signal stored in a file with heading and value in each line
 # Stored in a class with value of the data and sampling frequency
 
+import numpy as np
+
 class FileIn:
     # Initialize the class
     def __init__(self, input_file, input_freq):
@@ -9,7 +11,7 @@ class FileIn:
     
     # Embedded file loading function
     def file_load(self, file_name):
-        content = []
+        contents = []
         total = 0
         avg = 0
         data_num = 0
@@ -26,7 +28,8 @@ class FileIn:
                         data_num += 1
                         avg = total/data_num
                         
-                        content.append(value)
+                        contents.append(value)
+                        
                 except:
                     pass
                 
@@ -35,7 +38,8 @@ class FileIn:
         except:
             print("ERROR: File " + file_name + " does not exist\n")
         
-        return content, avg
+        data = np.array(contents, dtype=np.float32)
+        return data, avg
         
 
 # Functional verification
