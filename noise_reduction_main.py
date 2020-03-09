@@ -21,13 +21,15 @@ if __name__ == "__main__":
     print(test_avg.data)
     print(test_avg.input_freq)
     print(test_avg.noise_freq)
-    reduced_result = test_avg.generate_average_data(5)
+    reduced_result_step = test_avg.generate_average_data(steps=5, atype="step")
+    reduced_result_smooth = test_avg.generate_average_data(steps=5, atype="smooth")
     
     #noisy_part = np.array(list(temp_data[860:])*5)
     #reduced_result = nr.reduce_noise(audio_clip=temp_data, noise_clip=noisy_part, verbose=False)
-    fig, ax = plt.subplots(figsize=(40,6))
+    fig, ax = plt.subplots(figsize=(20,4))
     ax.plot(temp_data, c='b', label='initial')
-    ax.plot(reduced_result, c='r', label='reduced')
+    #ax.plot(reduced_result_step, c='r', label='reduced')
+    ax.plot(reduced_result_smooth, c='r', label='reduced')
     #ax.plot(noisy_part, c='g', label='noise')
     plt.legend(loc='best');
     plt.show()
