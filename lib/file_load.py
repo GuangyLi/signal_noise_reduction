@@ -1,30 +1,25 @@
 # Python program to load signal stored in a file with heading and value in each line
 # Stored in a class with value of the data and sampling frequency
 
+import sys
 import numpy as np
 
 class FileIn:
     # Initialize the class
     def __init__(self, input_file, input_freq):
-        self.data, self.header, self.average = self.file_load(input_file)
+        self.file_name = input_file
         self.freq = input_freq
-        
-        loc = ""
-        if "/" in input_file:
-            for i in input_file.split("/")[:-1]:
-                loc = loc+ i +"/"
-        else:
-            loc = "./"
-        self.fileloc = loc
+        self.data, self.header, self.average = self.file_load()
+        self.fileloc = self.file_loc()
     
     # Embedded file loading function
-    def file_load(self, file_name):
+    def file_load(self):
         contents = []
-        head = file_name.split("/")[-1].split(".")[0]
+        head = self.file_name.split("/")[-1].split(".")[0]
         total, avg, data_num = 0, 0, 0
         
         try:
-            file = open(file_name, 'r')
+            file = open(self.file_name, 'r')
             for line in file:
                 # Ignore any data which has type as message instead of value
                 try:
@@ -46,13 +41,44 @@ class FileIn:
             file.close()
             
         except:
-            print("ERROR: File " + file_name + " does not exist.\n")
+            err_msg = "ERROR: File " + self.file_name + " does not exist.\n"
+            print(err_msg, file=sys.stderr, end='')
         
         data = np.array(contents, dtype=np.float32)
         return data, head, avg
+    
+    # Function that find the location fodler of the file
+    def file_loc(self):
+        loc = ""
+        if "/" in self.file_name:
+            for i in self.file_name.split("/")[:-1]:
+                loc = loc+ i +"/"
+        else:
+            loc = "./"
+        
+        return loc
+        
+    # Functions to return values
+    def get_data(self):
+        return self.data
+    
+    def get_location(self):
+        return self.fileloc
+    
+    def get_full_name(self):
+        return self.file_name
+    
+    def get_header(self):
+        return self.header
+    
+    def get_frequency(self):
+        return self.freq
+    
+    def get_average(self):
+        return self.average
         
 if __name__ == "__main__":
-    # Functional verification
+    # Functional level verification starts here
     print("--------FileIn class functional verification--------\n")
     test = FileIn("data/google1.txt", 334)
     print("File located in %s" %test.fileloc)
