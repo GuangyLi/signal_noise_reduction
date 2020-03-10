@@ -108,6 +108,62 @@ class average_signal:
         # Noise frequency stands for # pulse of noise per second
         cal_step = int(self.input_freq/self.noise_freq)*2
         return cal_step
+    
+    # Function that returns the average of each slope in certain step
+    def slope_average_data(self, steps="auto"):
+        # Error handling
+        if steps != "auto":
+            if not isinstance(steps, int):
+                raise TypeError("Sorry. 'steps' must be an integer.")
+            if not steps >= 0:
+                raise ValueError("Sorry. 'steps' must be zero or positive.")
+        else:
+            steps = self.auto_gen_step()
+        
+        temp_data = np.copy(self.data)
+        avg_cur_slope = np.array([])
+        len_steps = int(len(temp_data)/steps)
+        
+        for i in range(len_steps):
+            
+            first = i*steps
+            last = (i+1)*steps
+            if last >= len(temp_data):
+                cur_avg = (temp_data[first] + temp_data[first-steps])/2
+            else:
+                cur_avg = (temp_data[last] + temp_data[first])/2
+            
+            avg_cur_slope = np.append(avg_cur_slope, cur_avg)
+        
+        i = 1
+        middle = int(steps/2)
+        while i < (len_steps-1):
+            avg_bfr_step = (avg_cur_slope[i] - avg_cur_slope[i-1])/steps
+            avg_aft_step = (avg_cur_slope[i+1] - avg_cur_slope[i])/steps
+            for s in range(steps):
+                cur_pos = i*steps + s
+                
+                if s <= middle:
+                    temp_data[cur_pos] = avg_cur_slope[i] - avg_bfr_step*(middle-s)
+                else:
+                    temp_data[cur_pos] = avg_cur_slope[i] + avg_aft_step*(s-middle)
+            i += 1
+        
+        avg_ini_step = (avg_cur_slope[1] - avg_cur_slope[0])/steps
+        avg_fin_step = (avg_cur_slope[-1] - avg_cur_slope[-2])/steps
+        
+        for s in range(steps):
+            ini_pos = s
+            fin_pos = -(s+1)
+            
+            if s <= middle:
+                temp_data[ini_pos] = avg_cur_slope[0] - avg_ini_step*(middle-s)
+                temp_data[fin_pos] = avg_cur_slope[-1] + avg_fin_step*(middle-s)
+            else:
+                temp_data[ini_pos] = avg_cur_slope[0] + avg_ini_step*(s-middle)
+                temp_data[fin_pos] = avg_cur_slope[-1] - avg_fin_step*(s-middle)
+        
+        return temp_data
 
 if __name__ == "__main__":
     # Functional level verification starts here
@@ -126,5 +182,10 @@ if __name__ == "__main__":
     print("test input is:")
     print(test_in)
     print("test result is:")
-    print(test_result)    
+    print(test_result)
+    test_result = test.slope_average_data(steps=2)
+    print("test input is:")
+    print(test_in)
+    print("test result is:")
+    print(test_result)        
     print("--------Verification ends--------\n")

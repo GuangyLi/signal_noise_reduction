@@ -25,9 +25,11 @@ if __name__ == "__main__":
     # Whether use auto method or not
     auto_avg = 0
     if auto_avg:
+        reduced_slope = test_avg.slope_average_data(steps="auto")
         reduced_result_step = test_avg.generate_average_data(steps="auto", atype="step")
         reduced_result_smooth = test_avg.generate_average_data(steps="auto", atype="smooth")
     else:
+        reduced_slope = test_avg.slope_average_data(steps=8)
         reduced_result_step = test_avg.generate_average_data(steps=16, atype="step")
         reduced_result_smooth = test_avg.generate_average_data(steps=16, atype="smooth")
     
@@ -37,12 +39,17 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(figsize=(20,4))
     ax.plot(temp_data, c='b', label='initial')
     
-    # Whether plot smooth curve or not
+    # Whether plot smooth curve or not, or slope average result
     plot_smooth = 1
-    if plot_smooth:
-        ax.plot(reduced_result_smooth, c='r', label='reduced')
+    slope_avg = 1
+    if slope_avg:
+        ax.plot(reduced_slope, c='r', label='reduced')
     else:
-        ax.plot(reduced_result_step, c='r', label='reduced')
+        if plot_smooth:
+            ax.plot(reduced_result_smooth, c='r', label='reduced')
+        else:
+            ax.plot(reduced_result_step, c='r', label='reduced')
+    
     
     #ax.plot(noisy_part, c='g', label='noise')
     plt.legend(loc='best');
