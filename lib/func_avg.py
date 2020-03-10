@@ -117,7 +117,7 @@ class average_signal:
             temp_result = calculate_step_average(self.data, steps)
         if atype == "smooth":
             temp_result = calculate_smooth_average(self.data, steps)
-        return self.return_file(temp_data, steps=steps, atype=atype)
+        return self.return_file(temp_result, steps=steps, atype=atype)
     
     # Function generates step to average automatically based on frequencies
     def auto_gen_step(self):
