@@ -24,14 +24,24 @@ if __name__ == "__main__":
     
     # Whether use auto method or not
     auto_avg = 0
+    plot_smooth = 1
+    plot_slope = 1
+    
     if auto_avg:
-        reduced_slope = test_avg.slope_average_data(steps="auto")
-        reduced_result_step = test_avg.generate_average_data(steps="auto", atype="step")
-        reduced_result_smooth = test_avg.generate_average_data(steps="auto", atype="smooth")
+        if plot_slope:
+            reduced_slope = test_avg.slope_average_data(steps="auto")
+        elif plot_smooth:
+            reduced_result_smooth = test_avg.generate_average_data(steps="auto", atype="smooth")
+        else:
+            reduced_result_step = test_avg.generate_average_data(steps="auto", atype="step")
+        
     else:
-        reduced_slope = test_avg.slope_average_data(steps=8)
-        reduced_result_step = test_avg.generate_average_data(steps=16, atype="step")
-        reduced_result_smooth = test_avg.generate_average_data(steps=16, atype="smooth")
+        if plot_slope:
+            reduced_slope = test_avg.slope_average_data(steps=8)
+        elif plot_smooth:
+            reduced_result_smooth = test_avg.generate_average_data(steps=16, atype="smooth")
+        else:
+            reduced_result_step = test_avg.generate_average_data(steps=16, atype="step")
     
     #noisy_part = np.array(list(temp_data[860:])*5)
     #reduced_result = nr.reduce_noise(audio_clip=temp_data, noise_clip=noisy_part, verbose=False)
@@ -40,15 +50,12 @@ if __name__ == "__main__":
     ax.plot(temp_data, c='b', label='initial')
     
     # Whether plot smooth curve or not, or slope average result
-    plot_smooth = 1
-    slope_avg = 1
-    if slope_avg:
+    if plot_slope:
         ax.plot(reduced_slope, c='r', label='reduced')
+    elif plot_smooth:
+        ax.plot(reduced_result_smooth, c='r', label='reduced')
     else:
-        if plot_smooth:
-            ax.plot(reduced_result_smooth, c='r', label='reduced')
-        else:
-            ax.plot(reduced_result_step, c='r', label='reduced')
+        ax.plot(reduced_result_step, c='r', label='reduced')
     
     
     #ax.plot(noisy_part, c='g', label='noise')

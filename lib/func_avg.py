@@ -152,7 +152,7 @@ class average_signal:
         avg_ini_step = (avg_cur_slope[1] - avg_cur_slope[0])/steps
         avg_fin_step = (avg_cur_slope[-1] - avg_cur_slope[-2])/steps
         
-        for s in range(steps):
+        for s in range(steps*2):
             ini_pos = s
             fin_pos = -(s+1)
             
