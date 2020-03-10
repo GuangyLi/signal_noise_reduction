@@ -4,13 +4,30 @@
 import statistics
 import numpy as np
 import random
+from lib.file_load import FileIn
+#from file_load import FileIn
 
 class average_signal:
     # Initialize the class
-    def __init__(self, input_data, input_freq, noise_freq):
-        self.data = input_data
-        self.input_freq = input_freq
-        self.noise_freq = noise_freq
+    def __init__(self, input_file):
+        # Error handling
+        if not isinstance(input_file, FileIn):
+            raise TypeError("Sorry. 'input_file' must be FileIn type.")
+        
+        self.file = input_file
+        self.data = input_file.data
+        self.input_freq = input_file.input_freq
+        self.noise_freq = input_file.noise_freq
+        
+    # Return the result in FileIn type
+    def return_file(self, result_data, steps="auto", atype="step"):
+        input_name = self.file.file_name
+        temp_file = FileIn(input_name, self.input_freq, self.noise_freq)
+        
+        temp_file.data = result_data
+        temp_file.rename(input_name[:-4] + "_reduced_avg_" + atype + "_" + str(steps) + ".txt")
+        
+        return temp_file
         
     def generate_average_data(self, steps="auto", atype="step"):
         validtype = ["step", "smooth"]
@@ -47,7 +64,7 @@ class average_signal:
             
             temp_data[cur_pos:] = avg_cur_step
             
-            return temp_data
+            return self.return_file(temp_data, steps=steps, atype=atype)
         
         # Function that calculate the average of # steps and generate a smooth transition
         def calculate_smooth_average(data_in, steps):
@@ -100,7 +117,7 @@ class average_signal:
             temp_result = calculate_step_average(self.data, steps)
         if atype == "smooth":
             temp_result = calculate_smooth_average(self.data, steps)
-        return temp_result
+        return self.return_file(temp_data, steps=steps, atype=atype)
     
     # Function generates step to average automatically based on frequencies
     def auto_gen_step(self):
@@ -163,10 +180,11 @@ class average_signal:
                 temp_data[ini_pos] = avg_cur_slope[0] + avg_ini_step*(s-middle)
                 temp_data[fin_pos] = avg_cur_slope[-1] - avg_fin_step*(s-middle)
         
-        return temp_data
+        return self.return_file(temp_data, steps=steps, atype="slope")
 
 if __name__ == "__main__":
     # Functional level verification starts here
+    '''
     print("--------average_signal class functional verification--------\n")
     test_in = []
     for i in range(100):
@@ -189,3 +207,4 @@ if __name__ == "__main__":
     print("test result is:")
     print(test_result)        
     print("--------Verification ends--------\n")
+    '''

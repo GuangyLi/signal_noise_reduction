@@ -6,9 +6,10 @@ import numpy as np
 
 class FileIn:
     # Initialize the class
-    def __init__(self, input_file, input_freq):
+    def __init__(self, input_file, input_freq, noise_freq):
         self.file_name = input_file
-        self.freq = input_freq
+        self.input_freq = input_freq
+        self.noise_freq = noise_freq
         self.data, self.header, self.average = self.file_load()
         self.fileloc = self.file_loc()
     
@@ -57,6 +58,16 @@ class FileIn:
             loc = "./"
         
         return loc
+    
+    def rename(self, new_name):
+        self.file_name = new_name
+    
+    # Function that export the information in this class to a txt file
+    def export(self):
+        ############################
+        ############TBD#############
+        ############################
+        return
         
     # Functions to return values
     def get_data(self):
@@ -71,8 +82,11 @@ class FileIn:
     def get_header(self):
         return self.header
     
-    def get_frequency(self):
-        return self.freq
+    def get_input_frequency(self):
+        return self.input_freq
+    
+    def get_noise_frequency(self):
+        return self.noise_freq
     
     def get_average(self):
         return self.average
@@ -80,10 +94,11 @@ class FileIn:
 if __name__ == "__main__":
     # Functional level verification starts here
     print("--------FileIn class functional verification--------\n")
-    test = FileIn("data/google1.txt", 334)
+    test = FileIn("data/google1.txt", 334, 167)
     print("File located in %s" %test.fileloc)
     print("File header is %s" %test.header)
     print(test.data)
     print("Overall average is %.2f" %test.average)
-    print("The signal frequency is %d\n" %test.freq)
+    print("The signal frequency is %d" %test.input_freq)
+    print("The noise frequency is %d\n" %test.noise_freq)
     print("--------Verification ends--------\n")

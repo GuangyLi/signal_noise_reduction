@@ -3,7 +3,12 @@
 
 import sys
 import numpy as np
-from file_load import FileIn
+from lib.file_load import FileIn
+#from file_load import FileIn
+
+############################
+############TBD#############
+############################
 
 # Funtion that aligns file in files close to same start point
 def auto_align(files):
@@ -28,8 +33,8 @@ def auto_adjust(files):
 if __name__ == "__main__":
     # Functional level verification starts here
     print("--------File out functional verification--------\n")
-    test1 = FileIn("data/google1.txt", 334)
-    test2 = FileIn("data/google2.txt", 334)
+    test1 = FileIn("data/google1.txt", 334, 167)
+    test2 = FileIn("data/google2.txt", 334, 167)
     test_files = [test1, test2]
     auto_align(test_files)
     auto_adjust(test_files)
