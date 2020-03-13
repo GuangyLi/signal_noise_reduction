@@ -63,7 +63,7 @@ class FileIn:
         self.file_name = new_name
     
     # Function that export the information in this class to a txt file
-    def export(self):
+    def export(self, loc="auto", name="auto"):
         ############################
         ############TBD#############
         ############################

@@ -88,7 +88,7 @@ if __name__ == "__main__":
     ax.plot(temp_data, c='b', label='initial')
     
     # Whether plot smooth curve or not, or slope average result
-    ax.plot(reduced_file.get_data(), c='r', label='reduced')
+    ax.plot(reduced_file.data, c='r', label='reduced')
     
     #ax.plot(noisy_part, c='g', label='noise')
     plt.legend(loc='best');
