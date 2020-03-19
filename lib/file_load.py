@@ -71,7 +71,7 @@ class FileIn:
         
     # Functions to return values
     def get_data(self):
-        return self.data
+        return self.data.copy()
     
     def get_max(self):
         return self.data.max()

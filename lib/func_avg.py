@@ -4,8 +4,11 @@
 import statistics
 import numpy as np
 import random
-from lib.file_load import FileIn
-#from file_load import FileIn
+
+if __name__ == "__main__":
+    from file_load import FileIn
+else:
+    from lib.file_load import FileIn
 
 class average_signal:
     # Initialize the class
@@ -15,7 +18,7 @@ class average_signal:
             raise TypeError("Sorry. 'input_file' must be FileIn type.")
         
         self.file = input_file
-        self.data = input_file.data
+        self.data = input_file.get_data()
         self.input_freq = input_file.input_freq
         self.noise_freq = input_file.noise_freq
         
@@ -46,7 +49,7 @@ class average_signal:
         
         # Function that calculate the average of # steps
         def calculate_step_average(data_in, steps):
-            temp_data = np.copy(data_in)
+            temp_data = data_in
             for i in range(int(len(temp_data)/steps)):
                 
                 last = (i+1)*steps
@@ -68,7 +71,7 @@ class average_signal:
         
         # Function that calculate the average of # steps and generate a smooth transition
         def calculate_smooth_average(data_in, steps):
-            temp_data = np.copy(data_in)
+            temp_data = data_in
             avg_cur_steps = np.array([])
             len_steps = int(len(temp_data)/steps)
             
@@ -138,7 +141,7 @@ class average_signal:
         else:
             steps = self.auto_gen_step()
         
-        temp_data = np.copy(self.data)
+        temp_data = self.data
         avg_cur_slope = np.array([])
         len_steps = int(len(temp_data)/steps)
         

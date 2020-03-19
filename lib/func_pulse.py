@@ -3,8 +3,11 @@
 
 import sys
 import numpy as np
-from lib.file_load import FileIn
-#from file_load import FileIn
+
+if __name__ == "__main__":
+    from file_load import FileIn
+else:
+    from lib.file_load import FileIn
 
 ############################
 ############TBD#############
