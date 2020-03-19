@@ -73,6 +73,12 @@ class FileIn:
     def get_data(self):
         return self.data
     
+    def get_max(self):
+        return self.data.max()
+    
+    def get_min(self):
+        return self.data.min()
+    
     def get_location(self):
         return self.fileloc
     

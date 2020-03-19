@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 # Rising and Falling edge, control with current
 
 # Funtion that aligns file in files close to same start point
-def auto_align(files, edge = "rising", tvalue="auto"):
+# neglect_pulse_width for maximum pulse width that is igrnored as noise
+def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=0):
     # Error handling
     if not isinstance(files, list):
         raise TypeError("Sorry. 'files' must be list.")
@@ -30,10 +31,18 @@ def auto_align(files, edge = "rising", tvalue="auto"):
             raise TypeError("Sorry. 'tvalue' must be an integer.")
         if not tvalue >= 0:
             print("WARNING. 'tvalue' should be positive for most cases.")
+            
+    if not isinstance(neglect_pulse_width, int):
+        raise TypeError("Sorry. 'neglect_pulse_width' must be int.")
+    if not neglect_pulse_width >= 0:
+        print("WARNING. 'neglect_pulse_width' must be positive.")
     
     for f in files:
-        cur_fe = find_first_edge(f, "rising", int(f.average)+1, 2)
-        print("avg is %d" %f.average)
+        cur_max = f.get_max()
+        cur_min = f.get_min()
+        edge_val = int((cur_max+cur_min)/2)
+        cur_fe = find_first_edge(f, "rising", edge_val, neglect_pulse_width)
+        print("edge_val is %d" %edge_val)
         print("%s first edge is %d" %(f.file_name, cur_fe))
     
     # Adjust the files after alignment
@@ -101,7 +110,7 @@ if __name__ == "__main__":
     test1 = FileIn("data/temp1.txt", 334, 167)
     test2 = FileIn("data/temp2.txt", 334, 167)
     test_files = [test1, test2]
-    auto_align(test_files)
+    auto_align(test_files, neglect_pulse_width=2)
     
     # Plot data to verify the alignment
     fig, ax = plt.subplots(figsize=(20,4))
