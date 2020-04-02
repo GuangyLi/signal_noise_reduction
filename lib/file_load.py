@@ -88,7 +88,7 @@ class FileIn:
             ept_loc = loc
         
         if name == "auto":
-            ept_name = self.file_name
+            ept_name = self.header
             if (".txt" in ept_name) and (ept_name[-4:] == ".txt"):
                 ept_name = ept_name[:-4]
             
@@ -109,12 +109,13 @@ class FileIn:
         ext_filenames = [f for f in os.listdir(ept_loc) if ospath.isfile(ospath.join(ept_loc, f))]
         ext_num = -1
         for ext_name in ext_filenames:
-            if ept_name in ext_name:
+            if ept_name[:-4] in ext_name:
                 try:
                     i = int(ext_name[-5])
                 except:
                     i = 0
                     
+                i += 1
                 if i > ext_num:
                     ext_num = i
         
@@ -122,7 +123,7 @@ class FileIn:
             ept_name = ept_name[:-4] + ("_%d.txt" %ext_num)
         
         # Create file and store data in
-        ept_file = open(ept_name, "w+")
+        ept_file = open(ospath.join(ept_loc, ept_name), "w+")
         for d in self.data:
             ept_file.write("%d\r" %d)
         
