@@ -1,6 +1,8 @@
 # Python program to load signal stored in a file with heading and value in each line
 # Stored in a class with value of the data and sampling frequency
 
+import os
+import os.path as ospath
 import sys
 import numpy as np
 
@@ -68,9 +70,64 @@ class FileIn:
     
     # Function that export the information in this class to a txt file
     def export(self, loc="auto", name="auto"):
-        ############################
-        ############TBD#############
-        ############################
+        # Error handling
+        if not isinstance(loc, str):
+            raise TypeError("Sorry. 'files' must be string.")
+        if not isinstance(name, str):
+            raise TypeError("Sorry. 'files' must be str.")
+        
+        # Export location and file name generation
+        ept_loc = ""
+        ept_name = ""
+        if loc == "auto":
+            ept_loc = self.fileloc
+        else:
+            if not os.path.exists(loc):
+                print("Warning: Destion doesn't exist, %s created" %loc)
+                os.mkdir(loc)
+            ept_loc = loc
+        
+        if name == "auto":
+            ept_name = self.file_name
+            if (".txt" in ept_name) and (ept_name[-4:] == ".txt"):
+                ept_name = ept_name[:-4]
+            
+            if self.aligned:
+                ept_name += "_aligned"
+            elif self.adjusted:
+                ept_name += "_adjusted"
+                
+            ept_name += ".txt"
+            
+        else:
+            if not (".txt" in name):
+                print("Warning: file type doesn't recognized, txt file created")
+                name += ".txt"
+            ept_name = name
+        
+        # Not overwrite exist files
+        ext_filenames = [f for f in os.listdir(ept_loc) if ospath.isfile(ospath.join(ept_loc, f))]
+        ext_num = -1
+        for ext_name in ext_filenames:
+            if ept_name in ext_name:
+                try:
+                    i = int(ext_name[-5])
+                except:
+                    i = 0
+                    
+                if i > ext_num:
+                    ext_num = i
+        
+        if ext_num is not -1:
+            ept_name = ept_name[:-4] + ("_%d.txt" %ext_num)
+        
+        # Create file and store data in
+        ept_file = open(ept_name, "w+")
+        for d in self.data:
+            ept_file.write("%d\r" %d)
+        
+        ept_file.close()
+        
         return
         
     # Functions to return values
@@ -107,11 +164,13 @@ class FileIn:
 if __name__ == "__main__":
     # Functional level verification starts here
     print("--------FileIn class functional verification--------\n")
-    test = FileIn("data/google1.txt", 334, 167)
+    test = FileIn("data/temp1.txt", 334, 167)
     print("File located in %s" %test.fileloc)
     print("File header is %s" %test.header)
     print(test.data)
     print("Overall average is %.2f" %test.average)
     print("The signal frequency is %d" %test.input_freq)
     print("The noise frequency is %d\n" %test.noise_freq)
+    test.aligned = 1
+    test.export()
     print("--------Verification ends--------\n")
