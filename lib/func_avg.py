@@ -188,13 +188,13 @@ class average_signal:
 
 if __name__ == "__main__":
     # Functional level verification starts here
-    '''
     print("--------average_signal class functional verification--------\n")
     test_in = []
     for i in range(100):
         test_in.append(random.randint(0,200))
     test_in = np.array(test_in)
-    test = average_signal(test_in, 334, 167)
+    test_in = FileIn("data/google1.txt", 334, 167)
+    test = average_signal(test_in)
     test_result = test.generate_average_data(steps="auto", atype="step")
     print("test input is:")
     print(test_in)
@@ -211,4 +211,3 @@ if __name__ == "__main__":
     print("test result is:")
     print(test_result)        
     print("--------Verification ends--------\n")
-    '''

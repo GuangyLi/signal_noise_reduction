@@ -10,9 +10,6 @@ if __name__ == "__main__":
 else:
     from lib.file_load import FileIn
 
-############################
-############TBD#############
-############################
 # Rising and Falling edge, control with current
 
 # Funtion that aligns file in files close to same start point
@@ -21,7 +18,7 @@ def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, ski
     # Error handling
     if not isinstance(files, list):
         raise TypeError("Sorry. 'files' must be list.")
-    if not isinstance(files[0], FileIn):
+    if not all(isinstance(f, FileIn) for f in files):
         raise TypeError("Sorry. items in 'files' must be FileIn type.")
     
     # Rising edge triggered or falling edge triggered, default to rising
@@ -75,6 +72,7 @@ def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, ski
                 di += 1
             
             files[i].data = cur_data[:-edge_diff]
+        files[i].aligned = True
     
     # Adjust the files after alignment
     auto_adjust(files)
@@ -86,8 +84,20 @@ def auto_adjust(files):
     # Error handling
     if not isinstance(files, list):
         raise TypeError("Sorry. 'files' must be list.")
-    if not isinstance(files[0], FileIn):
-        raise TypeError("Sorry. items in 'files' must be FileIn type.")    
+    if not all(isinstance(f, FileIn) for f in files):
+        raise TypeError("Sorry. items in 'files' must be FileIn type.")
+    
+    # Find the minimum size in files
+    min_size = float("inf")
+    for f in files:
+        cur_dsize = f.get_data_size()
+        if cur_dsize < min_size:
+            min_size = cur_dsize
+    
+    # Reduce all data in files to min_size
+    for f in files:
+        f.data = f.data[:min_size]
+        f.adjusted = True
     
     return
 
@@ -162,6 +172,9 @@ if __name__ == "__main__":
 
     test_files = [test1, test2]
     auto_align(test_files, neglect_pulse_width=2, skip_steps=1)
+    
+    if (test1.adjusted and test1.aligned and test2.adjusted and test2.aligned):
+        print("All adjusted and aligned")
     
     # Plot data to verify the alignment
     fig, ax = plt.subplots(figsize=(20,4))

@@ -102,7 +102,8 @@ if __name__ == "__main__":
     #reduced_result = nr.reduce_noise(audio_clip=temp_data, noise_clip=noisy_part, verbose=False)
     
     fig, ax = plt.subplots(figsize=(20,4))
-    ax.plot(temp_data, c='r', label='initial')
+    ax.plot(test1.get_data(), c='r', label='initial1')
+    ax.plot(test2.get_data(), c='y', label='initial2')
     
     # Whether plot smooth curve or not, or slope average result
     ax.plot(reduced_file1.data, c='b', label='reduced1')

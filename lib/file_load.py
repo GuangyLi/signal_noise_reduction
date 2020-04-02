@@ -12,6 +12,10 @@ class FileIn:
         self.noise_freq = noise_freq
         self.data, self.header, self.average = self.file_load()
         self.fileloc = self.file_loc()
+        
+        # Internal flag to determine whether it's adjusted/aligned or not
+        self.aligned = False
+        self.adjusted = False
     
     # Embedded file loading function
     def file_load(self):
@@ -78,6 +82,9 @@ class FileIn:
     
     def get_min(self):
         return self.data.min()
+    
+    def get_data_size(self):
+        return self.data.size
     
     def get_location(self):
         return self.fileloc
