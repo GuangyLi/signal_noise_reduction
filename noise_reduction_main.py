@@ -181,7 +181,7 @@ if __name__ == "__main__":
     if use_temp:
         test_files = load_files(files_loc, FILECATEGORY[0], 2)
     else:
-        test_files = load_files(files_loc, FILECATEGORY[1], 5, count_start=3)
+        test_files = load_files(files_loc, FILECATEGORY[4], 5, count_start=1)
     
     for f in test_files:
         print("File header is %s" %f.get_header())
