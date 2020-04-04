@@ -65,7 +65,7 @@ def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, ski
             else:
                 edge_val = tvalue
             cur_fe = find_first_edge(f, "rising", edge_val, neglect_pulse_width, skip_steps)
-            print("edge_val is %d" %edge_val)
+            print("Edge_val is %d" %edge_val)
             print("%s first edge is %d" %(f.file_name, cur_fe))
             first_edges.append(cur_fe)
     else:

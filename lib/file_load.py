@@ -54,12 +54,12 @@ class FileIn:
         data = np.array(contents, dtype=np.float32)
         return data, head, avg
     
-    # Function that find the location fodler of the file
+    # Function that find the location folder of the file
     def file_loc(self):
         loc = ""
         if "/" in self.file_name:
             for i in self.file_name.split("/")[:-1]:
-                loc = loc+ i +"/"
+                loc = loc + i +"/"
         else:
             loc = "./"
         
@@ -67,6 +67,7 @@ class FileIn:
     
     def rename(self, new_name):
         self.file_name = new_name
+        self.header = new_name.split("/")[-1]
     
     # Function that export the information in this class to a txt file
     def export(self, loc="auto", name="auto"):
