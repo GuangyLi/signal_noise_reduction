@@ -14,12 +14,21 @@ else:
 
 # Funtion that aligns file in files close to same start point
 # neglect_pulse_width for maximum pulse width that is igrnored as noise
-def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, skip_steps=1):
+def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, skip_steps=1, input_edges="None"):
     # Error handling
     if not isinstance(files, list):
         raise TypeError("Sorry. 'files' must be list.")
     if not all(isinstance(f, FileIn) for f in files):
         raise TypeError("Sorry. items in 'files' must be FileIn type.")
+    
+    # Allow input known edges to manually align data
+    if input_edges != "None":
+        if not isinstance(input_edges, list):
+            raise TypeError("Sorry. 'input_edges' must be a list.")
+        if not all(isinstance(e, int) for e in input_edges):
+            raise TypeError("Sorry. items in 'input_edges' must be int type.")
+        if not (len(input_edges) == len(files)):
+            raise TypeError("Sorry. length of 'input_edges' must be same as length of 'files'.")    
     
     # Rising edge triggered or falling edge triggered, default to rising
     if (edge != "rising") and (edge != "falling"):
@@ -44,20 +53,23 @@ def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, ski
     if not skip_steps >= 1:
         print("WARNING. 'skip_steps' must be larger than or equal to 1.")
     
-    first_edges = []
     file_num = len(files)
     
-    for f in files:
-        cur_max = f.get_max()
-        cur_min = f.get_min()
-        if tvalue == "auto":
-            edge_val = int((cur_max+cur_min)/2)
-        else:
-            edge_val = tvalue
-        cur_fe = find_first_edge(f, "rising", edge_val, neglect_pulse_width, skip_steps)
-        print("edge_val is %d" %edge_val)
-        print("%s first edge is %d" %(f.file_name, cur_fe))
-        first_edges.append(cur_fe)
+    if input_edges == "None":
+        first_edges = []
+        for f in files:
+            cur_max = f.get_max()
+            cur_min = f.get_min()
+            if tvalue == "auto":
+                edge_val = int((cur_max+cur_min)/2)
+            else:
+                edge_val = tvalue
+            cur_fe = find_first_edge(f, "rising", edge_val, neglect_pulse_width, skip_steps)
+            print("edge_val is %d" %edge_val)
+            print("%s first edge is %d" %(f.file_name, cur_fe))
+            first_edges.append(cur_fe)
+    else:
+        first_edges = list(input_edges)
     
     earliest_edge = min(first_edges)
     
@@ -77,7 +89,7 @@ def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, ski
     # Adjust the files after alignment
     auto_adjust(files)
     
-    return
+    return first_edges
 
 # Funtion that adjust file in files to same length
 def auto_adjust(files):
@@ -171,7 +183,7 @@ if __name__ == "__main__":
         test2 = FileIn("data/temp2.txt", 334, 167)
 
     test_files = [test1, test2]
-    auto_align(test_files, neglect_pulse_width=2, skip_steps=1)
+    auto_align(test_files, neglect_pulse_width=2, skip_steps=1, input_edges="None")
     
     if (test1.adjusted and test1.aligned and test2.adjusted and test2.aligned):
         print("All adjusted and aligned")
