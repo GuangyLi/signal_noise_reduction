@@ -58,7 +58,7 @@ def user_in_ctrl():
     
     return
 
-def load_files(file_loc, file_cate):
+def load_files(file_loc, file_cate, file_count, count_start = 1):
     global file_num
     
     # Error handling
@@ -68,6 +68,10 @@ def load_files(file_loc, file_cate):
         raise TypeError("Sorry. 'file_cate' must be string.")
     if not isinstance(file_num, int):
         raise TypeError("Sorry. 'file_num' must be int.")
+    if not isinstance(file_count, int):
+        raise TypeError("Sorry. 'file_count' must be int.")
+    if not isinstance(count_start, int):
+        raise TypeError("Sorry. 'count_start' must be int.")    
     
     if not os.path.exists(file_loc):
         print("Warning: Destion doesn't exist, %s created" %file_loc)
@@ -84,6 +88,13 @@ def load_files(file_loc, file_cate):
     
     if ext_num == 0:
         raise TypeError("Sorry. %s related files doesn't exist in %s." %(file_cate, file_loc))
+    
+    if ext_num > file_count:
+        ext_num = file_count
+        ext_names = []
+        for i in range(file_count):
+            tmp_name = file_cate + str(i+count_start) + ".txt"
+            ext_names.append(tmp_name)
     
     file_num = ext_num
     files = []
@@ -158,15 +169,18 @@ if __name__ == "__main__":
     print("--------Main file functional verification--------\n")
     
     allow_user_in = 0
+    save_file_flag = 0
     if allow_user_in:
         user_in_ctrl()
     
     files_loc = "lib/data/"
-    use_google = 1
-    if use_google:
-        test_files = load_files(files_loc, FILECATEGORY[1])
+    
+    # FILECATEGORY = ['temp','google','music','omusic','youtube']
+    use_temp = 0
+    if use_temp:
+        test_files = load_files(files_loc, FILECATEGORY[0], 2)
     else:
-        test_files = load_files(files_loc, FILECATEGORY[0])
+        test_files = load_files(files_loc, FILECATEGORY[1], 5, count_start=3)
     
     for f in test_files:
         print("File header is %s" %f.get_header())
@@ -174,9 +188,10 @@ if __name__ == "__main__":
     
     reduced_files = get_reduced_files(test_files)
     
-    reduced_fedge = adj.auto_align(reduced_files, tvalue=600, neglect_pulse_width=2, skip_steps=12)
+    reduced_fedge = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=12)
     
     plot_files(reduced_files)
-    save_files(reduced_files)
+    
+    if save_file_flag: save_files(reduced_files)
     
     print("--------Verification ends--------\n")
