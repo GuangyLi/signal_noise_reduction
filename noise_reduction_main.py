@@ -170,6 +170,7 @@ if __name__ == "__main__":
     
     allow_user_in = 0
     save_file_flag = 0
+    align_original = 1
     if allow_user_in:
         user_in_ctrl()
     
@@ -188,9 +189,13 @@ if __name__ == "__main__":
     
     reduced_files = get_reduced_files(test_files)
     
-    reduced_fedge = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=12)
+    reduced_fedges = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=12)
     
     plot_files(reduced_files)
+    
+    if align_original:
+        adj.auto_align(test_files, tvalue="auto", neglect_pulse_width=2, skip_steps=12, input_edges=reduced_fedges)
+        plot_files(test_files)
     
     if save_file_flag: save_files(reduced_files)
     
