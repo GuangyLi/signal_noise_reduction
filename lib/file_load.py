@@ -8,12 +8,13 @@ import numpy as np
 
 class FileIn:
     # Initialize the class
-    def __init__(self, input_file, input_freq, noise_freq):
+    def __init__(self, input_file, input_freq, noise_freq, category):
         self.file_name = input_file
         self.input_freq = input_freq
         self.noise_freq = noise_freq
         self.data, self.header, self.average = self.file_load()
         self.fileloc = self.file_loc()
+        self.file_category = category
         
         # Internal flag to determine whether it's adjusted/aligned or not
         self.aligned = False
@@ -70,7 +71,7 @@ class FileIn:
         self.header = new_name.split("/")[-1]
     
     # Function that export the information in this class to a txt file
-    def export(self, loc="auto", name="auto"):
+    def export(self, category, loc="auto", name="auto"):
         # Error handling
         if not isinstance(loc, str):
             raise TypeError("Sorry. 'files' must be string.")
@@ -83,10 +84,14 @@ class FileIn:
         if loc == "auto":
             ept_loc = self.fileloc
         else:
-            if not os.path.exists(loc):
-                print("Warning: Destion doesn't exist, %s created" %loc)
-                os.mkdir(loc)
             ept_loc = loc
+            
+        if not (category in ept_loc):
+            ept_loc = ept_loc + category + "/"        
+            
+        if not os.path.exists(ept_loc):
+            print("Warning: Destion doesn't exist, %s created" %ept_loc)
+            os.mkdir(ept_loc)            
         
         if name == "auto":
             ept_name = self.header

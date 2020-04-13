@@ -1,0 +1,25 @@
+ At beginning of experiment, reset phone
+-close all apps in 'background'
+-only wi-fi on
+-DND on
+-no display settings
+-brightness at top of screen mirroring
+-no volume
+-started at 2:40
+-using google chrome
+-close all chrome tabs
+-3 second current traces
+-no control over cache
+
+-control website: http://afridi.ece.cornell.edu/research.html
+
+- done with wired 100%
+- done with wireless 100%
+- done with wired 95%
+- done with wireless 95%
+
+-started at 8PM
+-doing cnn
+-wired 100%
+-wireless 100%
+-wireless 95%

@@ -25,7 +25,8 @@ class average_signal:
     # Return the result in FileIn type
     def return_file(self, result_data, steps="auto", atype="step"):
         input_name = self.file.file_name
-        temp_file = FileIn(input_name, self.input_freq, self.noise_freq)
+        input_cate = self.file.file_category
+        temp_file = FileIn(input_name, self.input_freq, self.noise_freq, input_cate)
         
         temp_file.data = result_data
         temp_file.rename(input_name[:-4] + "_reduced_avg_" + atype + "_" + str(steps) + ".txt")
@@ -193,7 +194,7 @@ if __name__ == "__main__":
     for i in range(100):
         test_in.append(random.randint(0,200))
     test_in = np.array(test_in)
-    test_in = FileIn("data/google1.txt", 334, 167)
+    test_in = FileIn("data/google1.txt", 334, 167, "google")
     test = average_signal(test_in)
     test_result = test.generate_average_data(steps="auto", atype="step")
     print("test input is:")
