@@ -55,8 +55,10 @@ def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, ski
     
     file_num = len(files)
     
+    first_edges = []
+    valid_edges = []
+    invalid_edges = []
     if input_edges == "None":
-        first_edges = []
         for f in files:
             cur_max = f.get_max()
             cur_min = f.get_min()
@@ -65,14 +67,28 @@ def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, ski
             else:
                 edge_val = tvalue
             cur_fe = find_first_edge(f, "rising", edge_val, neglect_pulse_width, skip_steps)
-            print("Edge_val is %d" %edge_val)
-            print("%s first edge is %d" %(f.file_name, cur_fe))
             first_edges.append(cur_fe)
+            
+            if cur_fe != -1: valid_edges.append(cur_fe)
+            
+        earliest_edge = min(valid_edges)
+        avg_edge = int(sum(first_edges)/file_num)
+        print("Earliest edge is: %d, and average edge is: %d." %(earliest_edge, avg_edge))
+        
+        # Optimize the first edges, remove -1 and other unrecognized ones
+        for i in range(file_num):
+            print("%s original first edge is %d." %(files[i].file_name, first_edges[i]))
+            
+            if ( (first_edges[i] == -1) or (first_edges[i] >= 5*earliest_edge or abs(first_edges[i]-avg_edge) >= 300) ):
+                first_edges[i] = avg_edge
+                invalid_edges.append(i)
+                
+            print("%s later first edge is %d." %(files[i].file_name, first_edges[i]))
     else:
         first_edges = list(input_edges)
+        earliest_edge = min(first_edges)
     
-    earliest_edge = min(first_edges)
-    
+    # Align all the data
     for i in range(file_num):
         if first_edges[i] > earliest_edge:
             edge_diff = first_edges[i] - earliest_edge
@@ -89,7 +105,7 @@ def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, ski
     # Adjust the files after alignment
     auto_adjust(files)
     
-    return first_edges
+    return first_edges, invalid_edges
 
 # Funtion that adjust file in files to same length
 def auto_adjust(files):
@@ -155,7 +171,8 @@ def find_first_edge(file, edge, tvalue, min_pw, skip_steps):
         for i in range(min_pw):
             next_p = i * skip_steps
             if edge == "rising":
-                if (temp_data[start_point+next_p] > tvalue*0.9) or (temp_data[end_point-next_p] < tvalue*1.1):
+                #if (temp_data[start_point+next_p] > tvalue*0.9) or (temp_data[end_point-next_p] < tvalue*1.1):
+                if (temp_data[end_point-next_p] < tvalue*1.1):
                     is_edge = 0
             else:
                 if (temp_data[start_point+next_p] < tvalue*0.9) or (temp_data[end_point-next_p] > tvalue*1.1):

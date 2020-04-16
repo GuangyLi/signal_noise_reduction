@@ -95,7 +95,8 @@ def load_files(file_loc, file_cate, file_count, count_start = 1, wired = False, 
     ext_num = 0
     cur_dirs = []
     for ext_dir in ext_dirs:
-        if (file_cate in ext_dir) and (wiring in ext_dir) and (percent_str in ext_dir):
+        #if (file_cate in ext_dir) and (wiring in ext_dir) and (percent_str in ext_dir):
+        if (file_cate in ext_dir):
             ext_num += 1
             cur_dirs.append(ext_dir)
     
@@ -125,7 +126,7 @@ def load_files(file_loc, file_cate, file_count, count_start = 1, wired = False, 
         file_num = file_count
         ext_files = []
         for i in range(file_count):
-            tmp_name = "trial" + str(i+count_start) + ".txt"
+            tmp_name = "t" + str(i+count_start) + ".txt"
             ext_files.append(tmp_name)
     
     files = []
@@ -172,15 +173,26 @@ def plot_files(files):
         raise TypeError("Sorry. items in 'files' must be FileIn type.")
     
     if len(files) > len(COLORS):
-        print("Warning: too many files might cause unrecognized output")
+        print("Warning: too many files might cause unrecognized output!")
     
     fig, ax = plt.subplots(figsize=(20,4))
+    files_size = len(files)
+    color_step = int(0xffffff/(files_size))
     cur_num = 0
     
-    for f in files:
-        tmp_lable = f.file_category + "_" + f.header 
-        ax.plot(f.get_data(), c=COLORS[cur_num], label=tmp_lable)
-        cur_num += 1
+    if (files_size <= 8):
+        for f in files:
+            tmp_lable = f.file_category + "_" + f.header 
+            ax.plot(f.get_data(), c=COLORS[cur_num], label=tmp_lable)
+            cur_num += 1
+    else:
+        for f in files:
+            tmp_lable = f.file_category + "_" + f.header 
+            hex_str = hex(color_step*(cur_num+1)-1)[2:]
+            color_str = "#" + "0"*(6-len(hex_str)) + hex_str
+            ax.plot(f.get_data(), c=color_str, label=tmp_lable)
+            cur_num += 1
+    
     
     plt.legend(loc='best');
     plt.show()
@@ -208,35 +220,65 @@ if __name__ == "__main__":
     print("--------Main file functional verification--------\n")
     
     allow_user_in = 0
-    save_file_flag = 1
+    save_file_flag = 0
     align_original = 1
+    print_unaligned = 1
+    
     if allow_user_in:
         user_in_ctrl()
     
     # FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
     
-    pre_loc = "lib/data/"
-    use_data = 3
+    pre_loc = "lib/data/Testing Data/"
+    use_data = 1
+    
+    if use_data == 1:
+        files_size = 50
+    elif use_data == 0:
+        files_size = 2
+    else:
+        files_size = 5
     
     if use_data:
-        test_files = load_files(pre_loc, FILECATEGORY[use_data], 5, count_start=1)
+        test_files = load_files(pre_loc, FILECATEGORY[use_data], files_size, count_start=1)
     else:
-        test_files = load_files(pre_loc, FILECATEGORY[use_data], 2)
+        test_files = load_files(pre_loc, FILECATEGORY[use_data], files_size)
     
     for f in test_files:
-        print("File header is %s" %f.get_header())
-        print("Overall average is %.2f" %f.get_average())
+        print( "File header is %s, and Overall average is %.2f" %(f.get_header(), f.get_average()) )
     
     reduced_files = get_reduced_files(test_files)
     
-    if use_data == 3:
-        steps = 20
-    elif use_data == 0:
+    if use_data == 0:
         steps = 1
+    elif use_data == 1:
+        steps = 9
+    elif use_data == 3:
+        steps = 20
     else:
         steps = 12
+        
+    if print_unaligned:
+        print("\nHere are unaligned raw data:")
+        plot_files(test_files)
+        print("\nHere are unaligned filtered data:")
+        plot_files(reduced_files)
     
-    reduced_fedges = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps)
+    reduced_fedges, invalid_edges = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps)
+    
+    # Print unrecognized plots for debugging
+    num_negative = len(invalid_edges)
+    print("There were %d unrecognized edges." %num_negative)
+    
+    if (num_negative and num_negative <= 8):
+        fig, ax = plt.subplots(figsize=(20,4))
+        j = 0
+        for i in invalid_edges:
+            ax.plot(reduced_files[i].get_data(), c=COLORS[j], label=reduced_files[i].header)
+            j += 1
+                
+        plt.legend(loc='best');
+        plt.show()
     
     plot_files(reduced_files)
     
