@@ -225,7 +225,7 @@ if __name__ == "__main__":
     print("--------Main file functional verification--------\n")
     
     allow_user_in = 0
-    save_file_flag = 0
+    save_file_flag = 1
     align_original = 1
     print_unaligned = 1
     
@@ -236,9 +236,9 @@ if __name__ == "__main__":
     # FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
     
     pre_loc = "lib/data/Testing Data/"
-    use_data = 1
+    use_data = 3
     
-    if use_data == 1:
+    if use_data == 1 or use_data == 3:
         files_size = 50
     elif use_data == 0:
         files_size = 2
