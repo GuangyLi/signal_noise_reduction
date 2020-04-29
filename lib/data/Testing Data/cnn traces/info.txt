@@ -1,0 +1,14 @@
+ At beginning of experiment, reset phone
+-close all apps in 'background'
+-only wi-fi on
+-DND on
+-no display settings
+-brightness at top of screen mirroring
+-no volume
+-using google chrome
+-close all chrome tabs
+-3 second current traces
+-no control over cache
+-incognito window
+
+4/15/2020
