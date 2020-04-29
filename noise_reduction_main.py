@@ -20,6 +20,7 @@ plot_slope = 1
 avg_steps = 8
 file_num = 0
 
+# Function that allow user input to specifically define what parameter used to process the data
 def user_in_ctrl():
     global auto_avg, plot_slope, plot_smooth, avg_steps
     prompt_text = "which noise reduction method to apply (step/slope): \n"
@@ -58,6 +59,7 @@ def user_in_ctrl():
     
     return
 
+# Function to load all files in that location with input category and counting number
 def load_files(file_loc, file_cate, file_count, count_start = 1, wired = False, percentage = 100):
     global file_num
     
@@ -136,6 +138,7 @@ def load_files(file_loc, file_cate, file_count, count_start = 1, wired = False, 
     
     return files
 
+# Function that return a list of filtered version of items in files list
 def get_reduced_files(files):
     # Error handling
     if not isinstance(files, list):
@@ -165,6 +168,7 @@ def get_reduced_files(files):
     
     return tmp_reduced
 
+# Function to plot data in files list
 def plot_files(files):
     # Error handling
     if not isinstance(files, list):
@@ -197,6 +201,7 @@ def plot_files(files):
     plt.legend(loc='best');
     plt.show()
 
+# Function to export files in the files list
 def save_files(files, file_category, separate_dir=False):
     # Error handling
     if not isinstance(files, list):
@@ -224,6 +229,7 @@ if __name__ == "__main__":
     align_original = 1
     print_unaligned = 1
     
+    # User input that can change the control variable
     if allow_user_in:
         user_in_ctrl()
     
@@ -239,6 +245,7 @@ if __name__ == "__main__":
     else:
         files_size = 5
     
+    # Load files into a list
     if use_data:
         test_files = load_files(pre_loc, FILECATEGORY[use_data], files_size, count_start=1)
     else:
@@ -247,6 +254,7 @@ if __name__ == "__main__":
     for f in test_files:
         print( "File header is %s, and Overall average is %.2f" %(f.get_header(), f.get_average()) )
     
+    # Filter the data in files
     reduced_files = get_reduced_files(test_files)
     
     if use_data == 0:
@@ -258,12 +266,14 @@ if __name__ == "__main__":
     else:
         steps = 12
         
+    # Plot unaligned raw and filtered data
     if print_unaligned:
         print("\nHere are unaligned raw data:")
         plot_files(test_files)
         print("\nHere are unaligned filtered data:")
         plot_files(reduced_files)
     
+    # Align and adjust the data in files
     reduced_fedges, invalid_edges = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps)
     
     # Print unrecognized plots for debugging
@@ -280,12 +290,17 @@ if __name__ == "__main__":
         plt.legend(loc='best');
         plt.show()
     
+    # Plot all aligned and filtered data
+    print("\nHere are aligned filtered data:")
     plot_files(reduced_files)
     
+    # Align the raw data and plot them
     if align_original:
         adj.auto_align(test_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps, input_edges=reduced_fedges)
+        print("\nHere are aligned raw data:")
         plot_files(test_files)
     
+    # Export filtered files
     if save_file_flag: save_files(reduced_files, FILECATEGORY[use_data], separate_dir=True)
     
-    print("--------Verification ends--------\n")
+    print("\n--------Verification ends--------")
