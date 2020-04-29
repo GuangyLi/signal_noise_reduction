@@ -225,7 +225,7 @@ if __name__ == "__main__":
     print("--------Main file functional verification--------\n")
     
     allow_user_in = 0
-    save_file_flag = 0
+    save_file_flag = 1
     align_original = 1
     print_unaligned = 1
     
