@@ -236,9 +236,9 @@ if __name__ == "__main__":
     # FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
     
     pre_loc = "lib/data/Testing Data/"
-    use_data = 3
+    use_data = 2
     
-    if use_data == 1 or use_data == 3:
+    if use_data == 1 or use_data == 3 or use_data == 2:
         files_size = 50
     elif use_data == 0:
         files_size = 2
