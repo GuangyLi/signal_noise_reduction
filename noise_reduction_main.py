@@ -9,7 +9,9 @@ from lib.func_avg import average_signal
 from lib.func_pulse import remove_pulse
 import lib.data_adjust as adj
 
-
+# Library for signal feature generation function
+from scipy.fftpack import fft
+from scipy.signal import welch
 
 # Global variable that contains all allowed color in matplotlib, use html hex string for greater range
 COLORS = ['b','g','r','c','m','y','k','w']
@@ -171,12 +173,18 @@ def get_reduced_files(files):
     return tmp_reduced
 
 # Function to plot data in files list
-def plot_files(files):
+def plot_data(files, mode="File"):
     # Error handling
     if not isinstance(files, list):
         raise TypeError("Sorry. 'files' must be list.")
-    if not all(isinstance(f, FileIn) for f in files):
-        raise TypeError("Sorry. items in 'files' must be FileIn type.")
+    if not isinstance(mode, str):
+        raise TypeError("Sorry. 'mode' must be string.")
+    if mode == "File":
+        if not all(isinstance(f, FileIn) for f in files):
+            raise TypeError("Sorry. items in 'files' must be FileIn type in File mode.")
+    elif mode == "data":
+        if not all(isinstance(f, list) for f in files):
+            raise TypeError("Sorry. items in 'files' must be list type in Data mode.")        
     
     if len(files) > len(COLORS):
         print("Warning: too many files might cause unrecognized output!")
@@ -186,19 +194,26 @@ def plot_files(files):
     color_step = int(0xffffff/(files_size))
     cur_num = 0
     
-    if (files_size <= 8):
+    if (mode == "File"):
+        if (files_size <= 8):
+            for f in files:
+                tmp_lable = f.file_category + "_" + f.header 
+                ax.plot(f.get_data(), c=COLORS[cur_num], label=tmp_lable)
+                cur_num += 1
+        else:
+            for f in files:
+                tmp_lable = f.file_category + "_" + f.header 
+                hex_str = hex(color_step*(cur_num+1)-1)[2:]
+                color_str = "#" + "0"*(6-len(hex_str)) + hex_str
+                ax.plot(f.get_data(), c=color_str, label=tmp_lable)
+                cur_num += 1
+    elif (mode == "Data"):
         for f in files:
-            tmp_lable = f.file_category + "_" + f.header 
-            ax.plot(f.get_data(), c=COLORS[cur_num], label=tmp_lable)
-            cur_num += 1
-    else:
-        for f in files:
-            tmp_lable = f.file_category + "_" + f.header 
+            tmp_lable = ("data %d" %cur_num)
             hex_str = hex(color_step*(cur_num+1)-1)[2:]
             color_str = "#" + "0"*(6-len(hex_str)) + hex_str
-            ax.plot(f.get_data(), c=color_str, label=tmp_lable)
-            cur_num += 1
-    
+            ax.plot(f, c=color_str, label=tmp_lable)
+            cur_num += 1        
     
     plt.legend(loc='best');
     plt.show()
@@ -222,13 +237,37 @@ def save_files(files, file_category, separate_dir=False):
         for f in files:
             f.export(file_category)
 
+def get_fft_values(y_values, T, N, f_s):
+    f_values = np.linspace(0.0, 1.0/(2.0*T), N//2)
+    fft_values_ = fft(y_values)
+    fft_values = 2.0/N * np.abs(fft_values_[0:N//2])
+    return f_values, fft_values
+
+def get_psd_values(y_values, f_s):
+    f_values, psd_values = welch(y_values, fs=f_s)
+    return f_values, psd_values
+
+def get_fft_files_10(files, N, f_values=334):
+    fft_files = []
+    for f in files:
+        fft_files.append(get_fft_values(f.data, 1/334, N, 334)[1][:10])
+    
+    return f_values, fft_files
+
+def get_psd_files_10(files, f_values=334):
+    psd_files = []
+    for f in files:
+        psd_files.append(get_psd_values(f.data, 334)[1][:10])
+    
+    return f_values, psd_files
+
 if __name__ == "__main__":
     # Functional verification starts here
     print("--------Main file functional verification--------\n")
     
     allow_user_in = 0
     save_file_flag = 0
-    align_original = 1
+    align_original = 0
     print_unaligned = 0
     
     # User input that can change the control variable
@@ -238,14 +277,16 @@ if __name__ == "__main__":
     # FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
     
     pre_loc = "lib/data/Testing Data/"
-    use_data = 3
+    use_data = 2
     
     if use_data == 1:
         files_size = 50
     elif use_data == 0:
         files_size = 2
+    elif use_data == 2:
+        files_size = 50
     elif use_data == 3:
-        files_size = 30
+        files_size = 50
     else:
         files_size = 5
     
@@ -269,14 +310,14 @@ if __name__ == "__main__":
     elif use_data == 3:
         steps = 6
     else:
-        steps = 12
+        steps = 10
         
     # Plot unaligned raw and filtered data
     if print_unaligned:
         print("\nHere are unaligned raw data:")
-        plot_files(test_files)
+        plot_data(test_files)
         print("\nHere are unaligned filtered data:")
-        plot_files(reduced_files)
+        plot_data(reduced_files)
     
     # Align and adjust the data in files
     reduced_fedges, invalid_edges = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps)
@@ -297,15 +338,27 @@ if __name__ == "__main__":
     
     # Plot all aligned and filtered data
     print("\nHere are aligned filtered data:")
-    plot_files(reduced_files)
+    #plot_data(reduced_files)
     
     # Align the raw data and plot them
     if align_original:
         adj.auto_align(test_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps, input_edges=reduced_fedges)
         print("\nHere are aligned raw data:")
-        plot_files(test_files)
+        plot_data(test_files)
     
     # Export filtered files
     if save_file_flag: save_files(reduced_files, FILECATEGORY[use_data], separate_dir=True)
+    
+    # Here starts the feature generation part
+    data_length = len(reduced_files[0].data)
+    
+    
+    f_values, files_fft_values = get_fft_files_10(reduced_files, data_length)
+    f_values, files_psd_values = get_psd_files_10(reduced_files)
+    
+    #print(len(files_fft_values))
+    #print(len(files_psd_values))
+    
+    plot_data(files_psd_values, mode="Data")
     
     print("\n--------Verification ends--------")

@@ -73,6 +73,8 @@ def auto_align(files, edge = "rising", tvalue="auto", neglect_pulse_width=1, ski
             
         earliest_edge = min(valid_edges)
         avg_edge = int(sum(first_edges)/file_num)
+        if (earliest_edge < avg_edge/2): earliest_edge = avg_edge
+        
         print("Earliest edge is: %d, and average edge is: %d." %(earliest_edge, avg_edge))
         
         # Optimize the first edges, remove -1 and other unrecognized ones
