@@ -13,6 +13,13 @@ import lib.data_adjust as adj
 from scipy.fftpack import fft
 from scipy.signal import welch
 
+# Library for machine learning
+from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier
+
 # Global variable that contains all allowed color in matplotlib, use html hex string for greater range
 COLORS = ['b','g','r','c','m','y','k','w']
 FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
@@ -269,96 +276,143 @@ if __name__ == "__main__":
     save_file_flag = 0
     align_original = 0
     print_unaligned = 0
+    load_multiple = 1
     
-    # User input that can change the control variable
-    if allow_user_in:
-        user_in_ctrl()
-    
-    # FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
-    
-    pre_loc = "lib/data/Testing Data/"
-    use_data = 2
-    
-    if use_data == 1:
-        files_size = 50
-    elif use_data == 0:
-        files_size = 2
-    elif use_data == 2:
-        files_size = 50
-    elif use_data == 3:
-        files_size = 50
-    else:
-        files_size = 5
-    
-    # Load files into a list
-    if use_data:
-        test_files = load_files(pre_loc, FILECATEGORY[use_data], files_size, count_start=1)
-    else:
-        test_files = load_files(pre_loc, FILECATEGORY[use_data], files_size)
-    
-    for f in test_files:
-        print( "File header is %s, and Overall average is %.2f" %(f.get_header(), f.get_average()) )
-    
-    # Filter the data in files
-    reduced_files = get_reduced_files(test_files)
-    reduced_files_noalign = list(reduced_files)
-    
-    if use_data == 0:
-        steps = 1
-    elif use_data == 1:
-        steps = 9
-    elif use_data == 3:
-        steps = 6
-    else:
-        steps = 10
+    if load_multiple:
         
-    # Plot unaligned raw and filtered data
-    if print_unaligned:
-        print("\nHere are unaligned raw data:")
-        plot_data(test_files)
-        print("\nHere are unaligned filtered data:")
+        # FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
+        pre_loc = "lib/data/Testing Data/"        
+        use_files = [1,2,3]
+        steps = [9,10,6]
+        files_size = 50
+        files_cate_num = len(use_files)
+        
+        all_files = []
+        all_labels = []
+        
+        for i in range(files_cate_num):
+            
+            test_files = load_files(pre_loc, FILECATEGORY[use_files[i]], files_size, count_start=1)
+            reduced_files = get_reduced_files(test_files)
+            reduced_fedges, invalid_edges = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps[i])
+            
+            # Print unrecognized plots for debugging
+            num_negative = len(invalid_edges)
+            print("There were %d unrecognized edges in file category %d." %(num_negative,i))
+            
+            all_files.extend(reduced_files)
+            all_labels.extend([FILECATEGORY[use_files[i]]]*files_size)
+            
+        
+        adj.auto_adjust(all_files)
+        
+        # Here starts the feature generation part
+        data_length = len(all_files[0].data)
+        
+        f_values, files_fft_values = get_fft_files_10(all_files, data_length)
+        f_values, files_psd_values = get_psd_files_10(all_files)
+        
+        all_features = []
+        for i in range(files_size*files_cate_num):
+            all_features.append([])
+            
+            all_features[i].extend(files_fft_values[i])
+            all_features[i].extend(files_psd_values[i])
+            all_features[i].extend(all_files[i].data)
+        
+        
+        X_train, X_test, y_train, y_test = train_test_split(all_features, all_labels, test_size=0.2, random_state=42)
+        
+        tree = DecisionTreeClassifier(criterion='entropy', max_depth= 20)
+        clf = AdaBoostClassifier(base_estimator=tree, n_estimators=1024).fit(X_train, y_train)
+        
+        p_train = clf.predict(X_train)
+        p_test = clf.predict(X_test)
+        
+        Err_Train = 1-accuracy_score(y_train, p_train)
+        Err_Test = 1-accuracy_score(y_test, p_test)
+        
+        print("\n\nTraining set prediction error rate is %.2f" %Err_Train)
+        print("Testing set prediction error rate is %.2f" %Err_Test)
+        
+    else:
+        # User input that can change the control variable
+        if allow_user_in:
+            user_in_ctrl()
+        
+        # FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
+        pre_loc = "lib/data/Testing Data/"
+        use_data = 2
+        
+        if use_data == 1:
+            files_size = 50
+        elif use_data == 0:
+            files_size = 2
+        elif use_data == 2:
+            files_size = 50
+        elif use_data == 3:
+            files_size = 50
+        else:
+            files_size = 5
+        
+        # Load files into a list
+        if use_data:
+            test_files = load_files(pre_loc, FILECATEGORY[use_data], files_size, count_start=1)
+        else:
+            test_files = load_files(pre_loc, FILECATEGORY[use_data], files_size)
+        
+        for f in test_files:
+            print( "File header is %s, and Overall average is %.2f" %(f.get_header(), f.get_average()) )
+        
+        # Filter the data in files
+        reduced_files = get_reduced_files(test_files)
+        reduced_files_noalign = list(reduced_files)
+        
+        if use_data == 0:
+            steps = 1
+        elif use_data == 1:
+            steps = 9
+        elif use_data == 3:
+            steps = 6
+        else:
+            steps = 10
+            
+        # Plot unaligned raw and filtered data
+        if print_unaligned:
+            print("\nHere are unaligned raw data:")
+            plot_data(test_files)
+            print("\nHere are unaligned filtered data:")
+            plot_data(reduced_files)
+        
+        # Align and adjust the data in files
+        reduced_fedges, invalid_edges = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps)
+        
+        # Print unrecognized plots for debugging
+        num_negative = len(invalid_edges)
+        print("There were %d unrecognized edges." %num_negative)
+        
+        if (num_negative and num_negative <= 8):
+            fig, ax = plt.subplots(figsize=(20,4))
+            j = 0
+            for i in invalid_edges:
+                ax.plot(reduced_files_noalign[i].get_data(), c=COLORS[j], label=reduced_files_noalign[i].header)
+                j += 1
+                    
+            plt.legend(loc='best');
+            plt.show()
+        
+        # Plot all aligned and filtered data
+        print("\nHere are aligned filtered data:")
         plot_data(reduced_files)
+        
+        # Align the raw data and plot them
+        if align_original:
+            adj.auto_align(test_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps, input_edges=reduced_fedges)
+            print("\nHere are aligned raw data:")
+            plot_data(test_files)
+        
+        # Export filtered files
+        if save_file_flag: save_files(reduced_files, FILECATEGORY[use_data], separate_dir=True)
     
-    # Align and adjust the data in files
-    reduced_fedges, invalid_edges = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps)
-    
-    # Print unrecognized plots for debugging
-    num_negative = len(invalid_edges)
-    print("There were %d unrecognized edges." %num_negative)
-    
-    if (num_negative and num_negative <= 8):
-        fig, ax = plt.subplots(figsize=(20,4))
-        j = 0
-        for i in invalid_edges:
-            ax.plot(reduced_files_noalign[i].get_data(), c=COLORS[j], label=reduced_files_noalign[i].header)
-            j += 1
-                
-        plt.legend(loc='best');
-        plt.show()
-    
-    # Plot all aligned and filtered data
-    print("\nHere are aligned filtered data:")
-    #plot_data(reduced_files)
-    
-    # Align the raw data and plot them
-    if align_original:
-        adj.auto_align(test_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps, input_edges=reduced_fedges)
-        print("\nHere are aligned raw data:")
-        plot_data(test_files)
-    
-    # Export filtered files
-    if save_file_flag: save_files(reduced_files, FILECATEGORY[use_data], separate_dir=True)
-    
-    # Here starts the feature generation part
-    data_length = len(reduced_files[0].data)
-    
-    
-    f_values, files_fft_values = get_fft_files_10(reduced_files, data_length)
-    f_values, files_psd_values = get_psd_files_10(reduced_files)
-    
-    #print(len(files_fft_values))
-    #print(len(files_psd_values))
-    
-    plot_data(files_psd_values, mode="Data")
     
     print("\n--------Verification ends--------")
