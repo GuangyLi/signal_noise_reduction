@@ -290,6 +290,7 @@ if __name__ == "__main__":
         all_files = []
         all_labels = []
         
+        # Load all files and labels
         for i in range(files_cate_num):
             
             test_files = load_files(pre_loc, FILECATEGORY[use_files[i]], files_size, count_start=1)
@@ -316,11 +317,12 @@ if __name__ == "__main__":
         for i in range(files_size*files_cate_num):
             all_features.append([])
             
+            # Merge fft, psd and data together
             all_features[i].extend(files_fft_values[i])
             all_features[i].extend(files_psd_values[i])
             all_features[i].extend(all_files[i].data)
         
-        
+        # Randomly split the training and testing set
         X_train, X_test, y_train, y_test = train_test_split(all_features, all_labels, test_size=0.2, random_state=42)
         
         tree = DecisionTreeClassifier(criterion='entropy', max_depth= 20)
@@ -332,8 +334,8 @@ if __name__ == "__main__":
         Err_Train = 1-accuracy_score(y_train, p_train)
         Err_Test = 1-accuracy_score(y_test, p_test)
         
-        print("\n\nTraining set prediction error rate is %.2f" %Err_Train)
-        print("Testing set prediction error rate is %.2f" %Err_Test)
+        print("\n\nTraining set prediction error rate is %.2f." %Err_Train)
+        print("Testing set prediction error rate is %.2f." %Err_Test)
         
     else:
         # User input that can change the control variable
