@@ -9,6 +9,8 @@ from lib.func_avg import average_signal
 from lib.func_pulse import remove_pulse
 import lib.data_adjust as adj
 
+
+
 # Global variable that contains all allowed color in matplotlib, use html hex string for greater range
 COLORS = ['b','g','r','c','m','y','k','w']
 FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
@@ -225,9 +227,9 @@ if __name__ == "__main__":
     print("--------Main file functional verification--------\n")
     
     allow_user_in = 0
-    save_file_flag = 1
+    save_file_flag = 0
     align_original = 1
-    print_unaligned = 1
+    print_unaligned = 0
     
     # User input that can change the control variable
     if allow_user_in:
@@ -238,10 +240,12 @@ if __name__ == "__main__":
     pre_loc = "lib/data/Testing Data/"
     use_data = 3
     
-    if use_data == 1 or use_data == 3:
+    if use_data == 1:
         files_size = 50
     elif use_data == 0:
         files_size = 2
+    elif use_data == 3:
+        files_size = 30
     else:
         files_size = 5
     
@@ -256,13 +260,14 @@ if __name__ == "__main__":
     
     # Filter the data in files
     reduced_files = get_reduced_files(test_files)
+    reduced_files_noalign = list(reduced_files)
     
     if use_data == 0:
         steps = 1
     elif use_data == 1:
         steps = 9
     elif use_data == 3:
-        steps = 20
+        steps = 6
     else:
         steps = 12
         
@@ -284,7 +289,7 @@ if __name__ == "__main__":
         fig, ax = plt.subplots(figsize=(20,4))
         j = 0
         for i in invalid_edges:
-            ax.plot(reduced_files[i].get_data(), c=COLORS[j], label=reduced_files[i].header)
+            ax.plot(reduced_files_noalign[i].get_data(), c=COLORS[j], label=reduced_files_noalign[i].header)
             j += 1
                 
         plt.legend(loc='best');
