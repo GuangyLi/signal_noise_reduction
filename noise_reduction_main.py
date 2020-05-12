@@ -3,11 +3,14 @@ import os
 import os.path as ospath
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+
 #import noisereduce as nr
 from lib.file_load import FileIn
 from lib.func_avg import average_signal
 from lib.func_pulse import remove_pulse
 import lib.data_adjust as adj
+from lib.cnn import VGG_result
 
 # Library for signal feature generation function
 from scipy.fftpack import fft
@@ -15,21 +18,27 @@ from scipy.signal import welch
 
 # Library for machine learning
 from sklearn.utils import shuffle
+from sklearn import preprocessing
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import AdaBoostClassifier
+
+# Nerual Network related
+import keras
+from keras import layers
+from keras.layers import Input,Reshape,ZeroPadding2D,Conv2D,Dropout,Flatten,Dense,Activation,MaxPooling2D,AlphaDropout,BatchNormalization
+import keras.models as Model
+from keras.regularizers import *
+from keras.optimizers import adam
+from keras.applications.vgg16 import VGG16
+import tensorflow as tf
+
 
 # Global variable that contains all allowed color in matplotlib, use html hex string for greater range
 COLORS = ['b','g','r','c','m','y','k','w']
 FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
-
-# Flag determine whether use auto method or not and which method to use
-auto_avg = 0
-plot_smooth = 1
-plot_slope = 1
-avg_steps = 8
-file_num = 0
 
 # Function that allow user input to specifically define what parameter used to process the data
 def user_in_ctrl():
@@ -132,15 +141,18 @@ def load_files(file_loc, file_cate, file_count, count_start = 1, wired = False, 
     
     # Check files in the sub directory
     file_loc = ospath.join(file_loc, cur_dirs[dir_num]) + "/"
-    ext_files = [f for f in os.listdir(file_loc) if ospath.isfile(ospath.join(file_loc, f))]
-    file_num = len(ext_files)
+    expect_files = [f for f in os.listdir(file_loc) if ospath.isfile(ospath.join(file_loc, f))]
+    file_num = len(expect_files)
     
+    ext_files = []
     if file_num > file_count:
         file_num = file_count
-        ext_files = []
         for i in range(file_count):
             tmp_name = "t" + str(i+count_start) + ".txt"
             ext_files.append(tmp_name)
+    else:
+        ext_files = expect_files
+    
     
     files = []
     for f in ext_files:
@@ -166,16 +178,16 @@ def get_reduced_files(files):
             if plot_slope:
                 tmp_reduced.append(tmp_test.slope_average_data(steps="auto"))
             elif plot_smooth:
-                tmp_reduced.append(tmp_test.slope_average_data(steps="auto", atype="smooth"))
+                tmp_reduced.append(tmp_test.generate_average_data(steps="auto", atype="smooth"))
             else:
-                tmp_reduced.append(tmp_test.slope_average_data(steps="auto", atype="step"))
+                tmp_reduced.append(tmp_test.generate_average_data(steps="auto", atype="step"))
         else:
             if plot_slope:
                 tmp_reduced.append(tmp_test.slope_average_data(steps=avg_steps))
             elif plot_smooth:
-                tmp_reduced.append(tmp_test.slope_average_data(steps=avg_steps, atype="smooth"))
+                tmp_reduced.append(tmp_test.generate_average_data(steps=avg_steps, atype="smooth"))
             else:
-                tmp_reduced.append(tmp_test.slope_average_data(steps=avg_steps, atype="step"))
+                tmp_reduced.append(tmp_test.generate_average_data(steps=avg_steps, atype="step"))
     
     return tmp_reduced
 
@@ -268,19 +280,75 @@ def get_psd_files_10(files, f_values=334):
     
     return f_values, psd_files
 
+# Label transfer function
+def label_reshape(y_label, lb, act="forward"):
+    # Change the format of label from (?,1) to (?,10) as 3 = [0,0,1,...,0,0,0]
+    if (act == "forward"):
+        y_label_reshaped = lb.transform(y_label)
+    # Change the format
+    elif (act == "backward"):
+        y_label_reshaped = lb.inverse_transform(y_label)
+    return y_label_reshaped
+
+# Use CPU, some problem on cuDNN
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 if __name__ == "__main__":
     # Functional verification starts here
     print("--------Main file functional verification--------\n")
     
+    # How many files expected, if 0, based on prediction function
+    file_num = 0
+    
+    # Allow user input to control flag or not
     allow_user_in = 0
+    
+    # Output data in txt file or not
     save_file_flag = 0
-    align_original = 0
+    
+    # Automatically determine avg_steps or not
+    auto_avg = 0
+    avg_steps = 8
+    
+    # if plot_slope, use slope_avg; elif plot_smooth, use smooth_avg; else, use step_avg
+    plot_slope = 1
+    plot_smooth = 1    
+    
+    # Align file and raw data or not
+    align_files = 1
+    align_original = 1 # also determine use raw in machine learning or not
     print_unaligned = 0
+    
+    # Load multiple files and apply machine laerning
     load_multiple = 1
+    
+    # 1 to use cnn, 0 to use adaboost
+    use_cnn = 1
+    
+    # Generate save model name
+    model_name = ""
+    if plot_slope:
+        model_name += "_slope"
+    elif plot_smooth:
+        model_name += "_smooth"
+    else:
+        model_name += "_step"
+    
+    if align_files:
+        model_name += "_aligned"
+    else:
+        model_name += "_unaligned"
+        
+    if align_original:
+        model_name += "_raw"
+    else:
+        model_name += "_filtered"    
     
     if load_multiple:
         
         # FILECATEGORY = ['temp','google','youtube','cnn','wiki','music','omusic']
+        
         pre_loc = "lib/data/Testing Data/"        
         use_files = [1,2,3]
         steps = [9,10,6]
@@ -295,20 +363,35 @@ if __name__ == "__main__":
             
             test_files = load_files(pre_loc, FILECATEGORY[use_files[i]], files_size, count_start=1)
             reduced_files = get_reduced_files(test_files)
-            reduced_fedges, invalid_edges = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps[i])
             
-            # Print unrecognized plots for debugging
-            num_negative = len(invalid_edges)
-            print("There were %d unrecognized edges in file category %d." %(num_negative,i))
+            if align_files:
+                reduced_fedges, invalid_edges = adj.auto_align(reduced_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps[i])
             
-            all_files.extend(reduced_files)
+                if align_original:
+                    adj.auto_align(test_files, tvalue="auto", neglect_pulse_width=2, skip_steps=steps[i], input_edges=reduced_fedges)            
+            
+                # Print unrecognized plots for debugging
+                num_negative = len(invalid_edges)
+                print("There were %d unrecognized edges in file category %d." %(num_negative,i))
+            
+            if align_original:
+                all_files.extend(test_files)
+            else:
+                all_files.extend(reduced_files)
+                
+            #plot_data(all_files[:(i+1)*50])
+            
             all_labels.extend([FILECATEGORY[use_files[i]]]*files_size)
             
-        
         adj.auto_adjust(all_files)
+        
+        #=================================================================
+        #=======================Machine Learning=========================
+        #=================================================================
         
         # Here starts the feature generation part
         data_length = len(all_files[0].data)
+        print(data_length)
         
         f_values, files_fft_values = get_fft_files_10(all_files, data_length)
         f_values, files_psd_values = get_psd_files_10(all_files)
@@ -320,22 +403,61 @@ if __name__ == "__main__":
             # Merge fft, psd and data together
             all_features[i].extend(files_fft_values[i])
             all_features[i].extend(files_psd_values[i])
-            all_features[i].extend(all_files[i].data)
+            all_features[i].extend(all_files[i].data[:1004])
+            
+            
+        all_features = np.array(all_features)
+        all_labels = np.array(all_labels)
+        data_length = 1024
         
         # Randomly split the training and testing set
-        X_train, X_test, y_train, y_test = train_test_split(all_features, all_labels, test_size=0.2, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(all_features, all_labels, test_size=0.9, random_state=random.randint(1,255))
         
-        tree = DecisionTreeClassifier(criterion='entropy', max_depth= 20)
-        clf = AdaBoostClassifier(base_estimator=tree, n_estimators=1024).fit(X_train, y_train)
+        print(X_train.shape)
         
-        p_train = clf.predict(X_train)
-        p_test = clf.predict(X_test)
-        
-        Err_Train = 1-accuracy_score(y_train, p_train)
-        Err_Test = 1-accuracy_score(y_test, p_test)
-        
-        print("\n\nTraining set prediction error rate is %.2f." %Err_Train)
-        print("Testing set prediction error rate is %.2f." %Err_Test)
+        if use_cnn:
+            # Binary encoder
+            lb = preprocessing.LabelBinarizer()
+            lb.fit(y_train)
+            
+            y_train_reshaped = label_reshape(y_train, lb, act="forward")
+            y_test_reshaped = label_reshape(y_test, lb, act="forward")            
+            
+            p_train_loss, p_test_loss, p_train_acc, p_test_acc = VGG_result(X_train, X_test, y_train_reshaped, y_test_reshaped, 
+                                                                            data_length, files_cate_num, train=False, model_name=model_name)
+            
+            # Calculate accuracy of result from loss model
+            p_train_loss_recovered = label_reshape(p_train_loss, lb, act="backward")
+            p_test_loss_recovered = label_reshape(p_test_loss, lb, act="backward")
+
+            Acu_Train_loss = accuracy_score(y_train, p_train_loss_recovered)
+            Acu_Test_loss = accuracy_score(y_test, p_test_loss_recovered)
+            
+            # Calculate accuracy of result from accuracy model
+            p_train_acc_recovered = label_reshape(p_train_acc, lb, act="backward")
+            p_test_acc_recovered = label_reshape(p_test_acc, lb, act="backward")
+
+            Acu_Train_acc = accuracy_score(y_train, p_train_acc_recovered)
+            Acu_Test_acc = accuracy_score(y_test, p_test_acc_recovered)
+            
+            print("\nItr #%d Acu_Train_loss is %.4f" %(i, Acu_Train_loss))
+            print("Itr #%d Acu_Test_loss is %.4f\n" %(i, Acu_Test_loss))
+            print("\nItr #%d Acu_Train_acc is %.4f" %(i, Acu_Train_acc))
+            print("Itr #%d Acu_Test_acc is %.4f\n" %(i, Acu_Test_acc))
+        else:
+            tree = DecisionTreeClassifier(criterion='entropy', max_depth= 20)
+            clf = AdaBoostClassifier(base_estimator=tree, n_estimators=1024).fit(X_train, y_train)
+            
+            p_train = clf.predict(X_train)
+            p_test = clf.predict(X_test)
+            
+            Acu_Train = accuracy_score(y_train, p_train)
+            Acu_Test = accuracy_score(y_test, p_test)
+            Err_Train = 1-Acu_Train
+            Err_Test = 1-Acu_Test
+            
+            print("\n\nTraining set prediction accuracy is %.2f%%." %(Acu_Train*100))
+            print("Testing set prediction accuracy is %.2f%%." %(Acu_Test*100))
         
     else:
         # User input that can change the control variable
