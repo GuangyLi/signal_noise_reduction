@@ -317,7 +317,7 @@ if __name__ == "__main__":
     
     # Align file and raw data or not
     align_files = 1
-    align_original = 1 # also determine use raw in machine learning or not
+    align_original = 0 # also determine use raw in machine learning or not
     print_unaligned = 0
     
     # Load multiple files and apply machine laerning
@@ -327,23 +327,28 @@ if __name__ == "__main__":
     use_cnn = 1
     
     # Generate save model name
+    train = False # Whether train the model or not
+    model_name_list = ["_slope_aligned_raw","_slope_aligned_filtered"]
     model_name = ""
-    if plot_slope:
-        model_name += "_slope"
-    elif plot_smooth:
-        model_name += "_smooth"
-    else:
-        model_name += "_step"
-    
-    if align_files:
-        model_name += "_aligned"
-    else:
-        model_name += "_unaligned"
+    if train:
+        if plot_slope:
+            model_name += "_slope"
+        elif plot_smooth:
+            model_name += "_smooth"
+        else:
+            model_name += "_step"
         
-    if align_original:
-        model_name += "_raw"
+        if align_files:
+            model_name += "_aligned"
+        else:
+            model_name += "_unaligned"
+            
+        if align_original:
+            model_name += "_raw"
+        else:
+            model_name += "_filtered"
     else:
-        model_name += "_filtered"    
+        model_name = model_name_list[1]
     
     if load_multiple:
         
@@ -391,7 +396,6 @@ if __name__ == "__main__":
         
         # Here starts the feature generation part
         data_length = len(all_files[0].data)
-        print(data_length)
         
         f_values, files_fft_values = get_fft_files_10(all_files, data_length)
         f_values, files_psd_values = get_psd_files_10(all_files)
@@ -410,10 +414,13 @@ if __name__ == "__main__":
         all_labels = np.array(all_labels)
         data_length = 1024
         
-        # Randomly split the training and testing set
-        X_train, X_test, y_train, y_test = train_test_split(all_features, all_labels, test_size=0.9, random_state=random.randint(1,255))
+        splitting_seed = random.randint(1,255)
         
-        print(X_train.shape)
+        # Randomly split the training and testing set
+        X_train, X_test, y_train, y_test = train_test_split(all_features, all_labels, test_size=0.9, random_state=splitting_seed)
+        
+        train_num = X_train.shape[0]
+        test_num = X_test.shape[0]
         
         if use_cnn:
             # Binary encoder
@@ -423,8 +430,8 @@ if __name__ == "__main__":
             y_train_reshaped = label_reshape(y_train, lb, act="forward")
             y_test_reshaped = label_reshape(y_test, lb, act="forward")            
             
-            p_train_loss, p_test_loss, p_train_acc, p_test_acc = VGG_result(X_train, X_test, y_train_reshaped, y_test_reshaped, 
-                                                                            data_length, files_cate_num, train=False, model_name=model_name)
+            p_train_loss, p_test_loss, p_train_acc, p_test_acc,  = VGG_result(X_train, X_test, y_train_reshaped, y_test_reshaped, 
+                                                                            data_length, files_cate_num, train=train, model_name=model_name)
             
             # Calculate accuracy of result from loss model
             p_train_loss_recovered = label_reshape(p_train_loss, lb, act="backward")
@@ -440,10 +447,12 @@ if __name__ == "__main__":
             Acu_Train_acc = accuracy_score(y_train, p_train_acc_recovered)
             Acu_Test_acc = accuracy_score(y_test, p_test_acc_recovered)
             
-            print("\nItr #%d Acu_Train_loss is %.4f" %(i, Acu_Train_loss))
-            print("Itr #%d Acu_Test_loss is %.4f\n" %(i, Acu_Test_loss))
-            print("\nItr #%d Acu_Train_acc is %.4f" %(i, Acu_Train_acc))
-            print("Itr #%d Acu_Test_acc is %.4f\n" %(i, Acu_Test_acc))
+            print("\nSplitting seed is %d\n" %splitting_seed)
+            
+            print("\nFiles #%d Acu_Train_loss%s is %.4f" %(train_num, model_name, Acu_Train_loss))
+            print("Files #%d Acu_Test_loss%s is %.4f\n" %(test_num, model_name, Acu_Test_loss))
+            print("\nFiles #%d Acu_Train_acc%s is %.4f" %(train_num, model_name, Acu_Train_acc))
+            print("Files #%d Acu_Test_acc%s is %.4f\n" %(test_num, model_name, Acu_Test_acc))
         else:
             tree = DecisionTreeClassifier(criterion='entropy', max_depth= 20)
             clf = AdaBoostClassifier(base_estimator=tree, n_estimators=1024).fit(X_train, y_train)
